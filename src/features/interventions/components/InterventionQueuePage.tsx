@@ -34,13 +34,49 @@ import { InterventionSummary } from "./InterventionSummary";
 import { Paper } from "@mui/material";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 
+type TableModule = typeof import('./InterventionTable');
+type DetailModule = typeof import('./InterventionDetail');
+
+let tableModulePromise: Promise<TableModule> | undefined;
+let detailModulePromise: Promise<DetailModule> | undefined;
+
+function usesSlowSectionScenario() {
+  return (
+    import.meta.env.DEV &&
+    new URLSearchParams(window.location.search).get('scenario') ===
+      'slow-sections'
+  );
+}
+
+async function waitForDemoDelay() {
+  if (!usesSlowSectionScenario()) return;
+  await new Promise((resolve) => window.setTimeout(resolve, 800));
+}
+
+function loadTableModule() {
+  tableModulePromise ??= Promise.all([
+    import('./InterventionTable'),
+    waitForDemoDelay(),
+  ]).then(([module]) => module);
+
+  return tableModulePromise;
+}
+
+function preloadInterventionDetail() {
+  detailModulePromise ??= Promise.all([
+    import('./InterventionDetail'),
+    waitForDemoDelay(),
+  ]).then(([module]) => module);
+
+  return detailModulePromise;
+}
+
 const LazyInterventionTable = lazy(() =>
-  import("./InterventionTable").then((module) => ({
-    default: module.InterventionTable,
-  })),
+  loadTableModule().then((module) => ({ default: module.InterventionTable })),
 );
+
 const LazyInterventionDetail = lazy(() =>
-  import("./InterventionDetail").then((module) => ({
+  preloadInterventionDetail().then((module) => ({
     default: module.InterventionDetail,
   })),
 );
@@ -275,6 +311,7 @@ export function InterventionQueuePage() {
           >
             <Suspense fallback={<TableFallback />}>
               <LazyInterventionTable
+                onPrepareDetail={preloadInterventionDetail}
                 interventions={visibleInterventions}
                 selectedId={state.selectedId}
                 onSelect={handleSelect}

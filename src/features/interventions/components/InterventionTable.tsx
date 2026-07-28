@@ -1,16 +1,16 @@
-import SearchOffIcon from '@mui/icons-material/SearchOff';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
-import type { Intervention } from '../intervention.types';
-import { InterventionRow } from './InterventionRow';
+import SearchOffIcon from "@mui/icons-material/SearchOff";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
+import type { Intervention } from "../intervention.types";
+import { InterventionRow } from "./InterventionRow";
 
 type InterventionTableProps = {
   interventions: Intervention[];
@@ -19,11 +19,13 @@ type InterventionTableProps = {
   onAdvance: (interventionId: string) => void;
   onToggleMonitoring: (interventionId: string) => void;
   onResetFilters: () => void;
+  onPrepareDetail: () => Promise<unknown>;
 };
 
 export function InterventionTable({
   interventions,
   selectedId,
+  onPrepareDetail,
   onSelect,
   onAdvance,
   onToggleMonitoring,
@@ -35,8 +37,16 @@ export function InterventionTable({
   // azioni e ripristino del focus su righe non più montate.
   if (interventions.length === 0) {
     return (
-      <Paper role="status" variant="outlined" sx={{ p: 5, textAlign: 'center' }}>
-        <SearchOffIcon color="primary" sx={{ fontSize: 40 }} aria-hidden="true" />
+      <Paper
+        role="status"
+        variant="outlined"
+        sx={{ p: 5, textAlign: "center" }}
+      >
+        <SearchOffIcon
+          color="primary"
+          sx={{ fontSize: 40 }}
+          aria-hidden="true"
+        />
         <Typography component="h2" variant="h2" sx={{ mt: 2 }}>
           Nessun intervento trovato
         </Typography>
@@ -52,7 +62,12 @@ export function InterventionTable({
 
   return (
     <Box component="section" aria-labelledby="queue-heading">
-      <Typography id="queue-heading" component="h2" variant="h2" sx={{ mb: 1.5 }}>
+      <Typography
+        id="queue-heading"
+        component="h2"
+        variant="h2"
+        sx={{ mb: 1.5 }}
+      >
         Coda interventi
       </Typography>
       <TableContainer component={Paper} variant="outlined">
@@ -73,6 +88,7 @@ export function InterventionTable({
                 key={intervention.id}
                 intervention={intervention}
                 selected={intervention.id === selectedId}
+                onPrepareDetail={onPrepareDetail}
                 onSelect={onSelect}
                 onAdvance={onAdvance}
                 onToggleMonitoring={onToggleMonitoring}

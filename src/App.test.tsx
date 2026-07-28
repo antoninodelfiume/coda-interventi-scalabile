@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "./App";
+afterEach(() => {
+  window.history.replaceState(null, "", "/");
+});
 async function renderApp() {
   await renderApp();
   await screen.findByRole("table", { name: "Coda interventi tecnici" });
@@ -18,6 +21,39 @@ describe("Coda interventi scalabile: smoke test dello starter", () => {
     ).toBeInTheDocument();
   });
 
+  it("mantiene la shell disponibile durante il caricamento della tabella", async () => {
+    window.history.replaceState(null, "", "/?scenario=slow-sections");
+    render(<App interventions={initialInterventions} />);
+
+    expect(
+      screen.getByRole("heading", { name: "Coda interventi scalabile" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Caricamento tabella...",
+    );
+    expect(
+      await screen.findByRole("table", { name: "Coda interventi tecnici" }),
+    ).toBeInTheDocument();
+  });
+
+  it("mostra un fallback locale mentre carica il primo dettaglio", async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(null, "", "/?scenario=slow-sections");
+    await renderApp();
+
+    await user.click(
+      screen.getByRole("button", { name: "Mostra dettaglio INT-1048" }),
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Caricamento dettaglio...",
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: "Ripristino gruppo di continuità",
+      }),
+    ).toHaveFocus();
+  });
   it("mantiene disponibile la ricerca per titolo", async () => {
     const user = userEvent.setup();
     await renderApp();
