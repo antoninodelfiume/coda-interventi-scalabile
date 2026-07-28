@@ -25,10 +25,19 @@ export function selectVisibleInterventions({
   monitoredOnly,
   sortBy,
 }: VisibleInterventionsInput): Intervention[] {
-  // TODO 01: la ricerca considera solo il titolo ed è sensibile a maiuscole
-  // e spazi esterni. Estendere il testo ricercabile e normalizzare i valori.
+  const normalizedQuery = query.trim().toLocaleLowerCase('it-IT');
+
   const matchesFilters = (intervention: Intervention) => {
-    const matchesQuery = intervention.title.includes(query);
+    const searchableText = [
+      intervention.id,
+      intervention.title,
+      intervention.site,
+      intervention.team,
+    ]
+      .join(' ')
+      .toLocaleLowerCase('it-IT');
+
+    const matchesQuery = searchableText.includes(normalizedQuery);
     const matchesStatus =
       statusFilter === 'all' || intervention.status === statusFilter;
     const matchesPriority =

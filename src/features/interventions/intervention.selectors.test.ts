@@ -11,6 +11,25 @@ const interventions: Intervention[] = [
 ];
 
 describe('intervention selectors', () => {
+  it('cerca per id, sede e team ignorando maiuscole e spazi esterni', () => {
+    const input = {
+      interventions,
+      statusFilter: 'all' as const,
+      priorityFilter: 'all' as const,
+      monitoredOnly: false,
+      sortBy: 'priority' as const,
+    };
+
+    expect(
+      selectVisibleInterventions({ ...input, query: '  int-2  ' })[0].id,
+    ).toBe('INT-2');
+    expect(
+      selectVisibleInterventions({ ...input, query: '  MILANO  ' })[0].id,
+    ).toBe('INT-2');
+    expect(
+      selectVisibleInterventions({ ...input, query: '  impianti  ' })[0].id,
+    ).toBe('INT-2');
+  });
   it('combina filtri e monitoraggio', () => {
     const result = selectVisibleInterventions({
       interventions,
