@@ -8,8 +8,8 @@ import {
 afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
-async function renderApp() {
-  await render(<App interventions={initialInterventions} />);
+async function renderApp(interventions = initialInterventions) {
+  await render(<App interventions={interventions} />);
   await screen.findByRole("table", { name: "Coda interventi tecnici" });
 }
 describe("Coda interventi scalabile: smoke test dello starter", () => {
@@ -21,6 +21,14 @@ describe("Coda interventi scalabile: smoke test dello starter", () => {
     expect(new Set(firstDataset.map((item) => item.id))).toHaveProperty(
       "size",
       48,
+    );
+  });
+    it('renderizza una finestra limitata per 1.200 record', async () => {
+    await renderApp(createInterventionDataset(1_200));
+
+    expect(screen.getByText('1200 interventi visibili')).toBeInTheDocument();
+    expect(screen.getAllByTestId('intervention-data-row').length).toBeLessThan(
+      20,
     );
   });
   it("mostra i 24 interventi iniziali", async () => {
@@ -124,4 +132,6 @@ describe("Coda interventi scalabile: smoke test dello starter", () => {
     ).toBeInTheDocument();
     expect(detailTrigger).toHaveFocus();
   });
+
+  
 });

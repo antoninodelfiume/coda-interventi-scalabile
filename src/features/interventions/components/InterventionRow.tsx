@@ -16,6 +16,7 @@ import { priorityLabels, statusLabels } from "../intervention.types";
 type InterventionRowProps = {
   intervention: Intervention;
   selected: boolean;
+  rowIndex: number;
   onSelect: (interventionId: string) => void;
   onAdvance: (interventionId: string) => void;
   onToggleMonitoring: (interventionId: string) => void;
@@ -35,6 +36,7 @@ function formatDate(value: string) {
 export const InterventionRow = memo(function InterventionRow({
   intervention,
   selected,
+  rowIndex,
   onSelect,
   onAdvance,
   onToggleMonitoring,
@@ -43,9 +45,20 @@ export const InterventionRow = memo(function InterventionRow({
   // TODO 05 e 08: il controllo dettaglio dovrà avviare il preload e ricevere
   // un id stabile usato dalla sequenza scroll, mount e focus.
   return (
-    <TableRow selected={selected} hover>
+    <TableRow
+      selected={selected}
+      hover
+      aria-rowindex={rowIndex}
+      data-testid="intervention-data-row"
+      sx={{ height: 76 }}
+    >
       <TableCell>
-        <Typography component="p" sx={{ fontWeight: 700 }}>
+        <Typography
+          component="p"
+          noWrap
+          title={intervention.title}
+          sx={{ fontWeight: 700, maxWidth: 320 }}
+        >
           {intervention.title}
         </Typography>
         <Typography variant="body2" color="text.secondary">

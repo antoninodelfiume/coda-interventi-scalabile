@@ -11,6 +11,11 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import type { Intervention } from "../intervention.types";
 import { InterventionRow } from "./InterventionRow";
+import { useMemo, useRef, useState } from "react";
+
+const VIEWPORT_HEIGHT = 560;
+const ROW_HEIGHT = 76;
+const OVERSCAN = 4;
 
 type InterventionTableProps = {
   interventions: Intervention[];
@@ -31,8 +36,24 @@ export function InterventionTable({
   onToggleMonitoring,
   onResetFilters,
 }: InterventionTableProps) {
-  // TODO 07: con 1.200 record questa map monta 1.200 righe. Implementare una
-  // finestra da 560 px, righe da 76 px, overscan 4 e spacer semantici.
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  const firstVisibleIndex = Math.floor(scrollTop / ROW_HEIGHT);
+  const visibleRowCount = Math.ceil(VIEWPORT_HEIGHT / ROW_HEIGHT);
+  const startIndex = Math.max(0, firstVisibleIndex - OVERSCAN);
+  const endIndex = Math.min(
+    interventions.length,
+    firstVisibleIndex + visibleRowCount + OVERSCAN,
+  );
+
+  const windowedInterventions = useMemo(
+    () => interventions.slice(startIndex, endIndex),
+    [endIndex, interventions, startIndex],
+  );
+
+  const topSpacerHeight = startIndex * ROW_HEIGHT;
+  const bottomSpacerHeight = (interventions.length - endIndex) * ROW_HEIGHT;
   // TODO 08: dopo il windowing gestire reset e clamp dello scroll, id delle
   // azioni e ripristino del focus su righe non più montate.
   if (interventions.length === 0) {
@@ -70,8 +91,20 @@ export function InterventionTable({
       >
         Coda interventi
       </Typography>
-      <TableContainer component={Paper} variant="outlined">
-        <Table sx={{ minWidth: 920 }} aria-label="Coda interventi tecnici">
+      <TableContainer
+        ref={scrollContainerRef}
+        component={Paper}
+        variant="outlined"
+        onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+        sx={{ height: VIEWPORT_HEIGHT, overflow: "auto" }}
+        data-testid="intervention-scroll-container"
+      >
+        <Table
+          stickyHeader
+          aria-rowcount={interventions.length + 1}
+          sx={{ minWidth: 920 }}
+          aria-label="Coda interventi tecnici"
+        >
           <TableHead>
             <TableRow>
               <TableCell>Intervento</TableCell>
@@ -83,17 +116,39 @@ export function InterventionTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {interventions.map((intervention) => (
-              <InterventionRow
-                key={intervention.id}
-                intervention={intervention}
-                selected={intervention.id === selectedId}
-                onPrepareDetail={onPrepareDetail}
-                onSelect={onSelect}
-                onAdvance={onAdvance}
-                onToggleMonitoring={onToggleMonitoring}
-              />
-            ))}
+            {topSpacerHeight > 0 ? (
+              <TableRow aria-hidden="true" data-testid="top-spacer">
+                <TableCell
+                  colSpan={6}
+                  sx={{ height: topSpacerHeight, p: 0, border: 0 }}
+                />
+              </TableRow>
+            ) : null}
+
+            {windowedInterventions.map((intervention, windowIndex) => {
+              const absoluteIndex = startIndex + windowIndex;
+              return (
+                <InterventionRow
+                  key={intervention.id}
+                  intervention={intervention}
+                  rowIndex={absoluteIndex + 2}
+                  selected={intervention.id === selectedId}
+                  onPrepareDetail={onPrepareDetail}
+                  onSelect={onSelect}
+                  onAdvance={onAdvance}
+                  onToggleMonitoring={onToggleMonitoring}
+                />
+              );
+            })}
+
+            {bottomSpacerHeight > 0 ? (
+              <TableRow aria-hidden="true" data-testid="bottom-spacer">
+                <TableCell
+                  colSpan={6}
+                  sx={{ height: bottomSpacerHeight, p: 0, border: 0 }}
+                />
+              </TableRow>
+            ) : null}
           </TableBody>
         </Table>
       </TableContainer>
