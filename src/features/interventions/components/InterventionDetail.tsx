@@ -1,17 +1,17 @@
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CloseIcon from '@mui/icons-material/Close';
-import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import type { RefObject } from 'react';
-import type { Intervention } from '../intervention.types';
-import { priorityLabels, statusLabels } from '../intervention.types';
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import CloseIcon from "@mui/icons-material/Close";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { useEffect, type RefObject } from "react";
+import type { Intervention } from "../intervention.types";
+import { priorityLabels, statusLabels } from "../intervention.types";
 
 type InterventionDetailProps = {
   intervention: Intervention | null;
@@ -21,9 +21,9 @@ type InterventionDetailProps = {
 };
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat('it-IT', {
-    dateStyle: 'long',
-    timeZone: 'UTC',
+  return new Intl.DateTimeFormat("it-IT", {
+    dateStyle: "long",
+    timeZone: "UTC",
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
@@ -33,6 +33,11 @@ export function InterventionDetail({
   onAdvance,
   headingRef,
 }: InterventionDetailProps) {
+  const interventionId = intervention?.id;
+
+  useEffect(() => {
+    if (interventionId) headingRef.current?.focus();
+  }, [headingRef, interventionId]);
   if (!intervention) {
     return (
       <Paper
@@ -59,7 +64,7 @@ export function InterventionDetail({
   }
 
   const actionLabel =
-    intervention.status === 'open' ? 'Prendi in carico' : 'Completa intervento';
+    intervention.status === "open" ? "Prendi in carico" : "Completa intervento";
 
   return (
     <Paper
@@ -67,12 +72,16 @@ export function InterventionDetail({
       component="aside"
       aria-labelledby="intervention-detail-title"
       variant="outlined"
-      sx={{ overflow: 'hidden' }}
+      sx={{ overflow: "hidden" }}
     >
       <Stack
         direction="row"
         spacing={2}
-        sx={{ p: 2.5, alignItems: 'flex-start', justifyContent: 'space-between' }}
+        sx={{
+          p: 2.5,
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+        }}
       >
         <Box>
           <Typography variant="body2" color="text.secondary">
@@ -96,25 +105,39 @@ export function InterventionDetail({
       <Divider />
       <Stack spacing={2} sx={{ p: 2.5 }}>
         <div>
-          <Typography variant="body2" color="text.secondary">Sede</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Sede
+          </Typography>
           <Typography>{intervention.site}</Typography>
         </div>
         <div>
-          <Typography variant="body2" color="text.secondary">Team assegnato</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Team assegnato
+          </Typography>
           <Typography>{intervention.team}</Typography>
         </div>
         <div>
-          <Typography variant="body2" color="text.secondary">Scadenza</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Scadenza
+          </Typography>
           <Typography>{formatDate(intervention.dueAt)}</Typography>
         </div>
-        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-          <Chip label={priorityLabels[intervention.priority]} variant="outlined" />
+        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+          <Chip
+            label={priorityLabels[intervention.priority]}
+            variant="outlined"
+          />
           <Box component="span" aria-live="polite" aria-atomic="true">
-            <Chip label={statusLabels[intervention.status]} variant="outlined" />
+            <Chip
+              label={statusLabels[intervention.status]}
+              variant="outlined"
+            />
           </Box>
-          {intervention.monitored ? <Chip label="Monitorato" color="primary" /> : null}
+          {intervention.monitored ? (
+            <Chip label="Monitorato" color="primary" />
+          ) : null}
         </Stack>
-        {intervention.status === 'completed' ? (
+        {intervention.status === "completed" ? (
           <Typography role="status" color="text.secondary">
             Il team ha completato questo intervento.
           </Typography>

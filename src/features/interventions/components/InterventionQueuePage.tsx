@@ -11,7 +11,10 @@ import {
   useRef,
   lazy,
   Suspense,
+  useState,
+  type RefObject,
 } from "react";
+
 import {
   interventionQueueReducer,
   createInitialQueueState,
@@ -26,17 +29,21 @@ import type {
   PriorityFilter,
   StatusFilter,
 } from "../intervention.types";
-import { InterventionDetail } from "./InterventionDetail";
 import { InterventionFilters } from "./InterventionFilters";
 import { InterventionSummary } from "./InterventionSummary";
 import { Paper } from "@mui/material";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 
 const LazyInterventionTable = lazy(() =>
   import("./InterventionTable").then((module) => ({
     default: module.InterventionTable,
   })),
 );
-
+const LazyInterventionDetail = lazy(() =>
+  import("./InterventionDetail").then((module) => ({
+    default: module.InterventionDetail,
+  })),
+);
 function TableFallback() {
   return (
     <Box component="section" aria-labelledby="queue-loading-heading">
@@ -55,14 +62,69 @@ function TableFallback() {
     </Box>
   );
 }
-// TODO 04: caricare InterventionDetail solo alla prima selezione e chiudere il
-// dettaglio quando il record selezionato scompare dalla vista filtrata.
+
+function DetailFallback() {
+  return (
+    <Paper
+      component="aside"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      variant="outlined"
+      sx={{ p: 3, minHeight: 260 }}
+    >
+      <Typography>Caricamento dettaglio...</Typography>
+    </Paper>
+  );
+}
+type EmptyDetailProps = {
+  focusRequested: boolean;
+  headingRef: RefObject<HTMLHeadingElement | null>;
+  onFocusRequestComplete: () => void;
+};
+
+function EmptyDetail({
+  focusRequested,
+  headingRef,
+  onFocusRequestComplete,
+}: EmptyDetailProps) {
+  useEffect(() => {
+    if (!focusRequested) return;
+    headingRef.current?.focus();
+    onFocusRequestComplete();
+  }, [focusRequested, headingRef, onFocusRequestComplete]);
+
+  return (
+    <Paper
+      id="intervention-detail"
+      component="aside"
+      aria-labelledby="intervention-detail-title"
+      variant="outlined"
+      sx={{ p: 3 }}
+    >
+      <BuildOutlinedIcon color="primary" aria-hidden="true" />
+      <Typography
+        id="intervention-detail-title"
+        ref={headingRef}
+        component="h2"
+        variant="h2"
+        tabIndex={-1}
+        sx={{ mt: 1.5 }}
+      >
+        Dettaglio intervento
+      </Typography>
+      <Typography color="text.secondary" sx={{ mt: 1 }}>
+        Seleziona una riga per consultare i dati e aggiornare lo stato.
+      </Typography>
+    </Paper>
+  );
+}
 // TODO 05: condividere la Promise degli import, precaricare su focus o
 // puntatore e supportare ?scenario=slow-sections in sviluppo.
 export function InterventionQueuePage() {
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
-  const detailTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const previousSelectedIdRef = useRef<string | null>(null);
+  const [emptyDetailFocusRequested, setEmptyDetailFocusRequested] =
+    useState(false);
   const [state, dispatch] = useReducer(
     interventionQueueReducer,
     undefined,
@@ -100,22 +162,27 @@ export function InterventionQueuePage() {
     state.selectedId,
   );
 
-  const handleSelect = useCallback((interventionId: string) => {
-    if (document.activeElement instanceof HTMLButtonElement) {
-      detailTriggerRef.current = document.activeElement;
+  useEffect(() => {
+    if (
+      state.selectedId &&
+      !visibleInterventions.some(
+        (intervention) => intervention.id === state.selectedId,
+      )
+    ) {
+      const filters = document.getElementById("intervention-filters");
+
+      if (!filters?.contains(document.activeElement)) {
+        setEmptyDetailFocusRequested(true);
+      }
+
+      dispatch({ type: "selectionCleared" });
     }
+  }, [state.selectedId, visibleInterventions]);
+
+  const handleSelect = useCallback((interventionId: string) => {
+    setEmptyDetailFocusRequested(false);
     dispatch({ type: "interventionSelected", interventionId });
   }, []);
-
-  useEffect(() => {
-    if (state.selectedId) {
-      detailHeadingRef.current?.focus();
-    } else if (previousSelectedIdRef.current) {
-      detailTriggerRef.current?.focus();
-    }
-
-    previousSelectedIdRef.current = state.selectedId;
-  }, [state.selectedId]);
 
   const handleAdvance = useCallback((interventionId: string) => {
     dispatch({ type: "statusAdvanced", interventionId });
@@ -127,6 +194,10 @@ export function InterventionQueuePage() {
 
   const handleReset = useCallback(() => {
     dispatch({ type: "filtersReset" });
+  }, []);
+
+  const handleEmptyDetailFocusComplete = useCallback(() => {
+    setEmptyDetailFocusRequested(false);
   }, []);
 
   const hasActiveFilters =
@@ -212,12 +283,22 @@ export function InterventionQueuePage() {
                 onResetFilters={handleReset}
               />
             </Suspense>
-            <InterventionDetail
-              intervention={selectedIntervention}
-              onClose={() => dispatch({ type: "selectionCleared" })}
-              onAdvance={handleAdvance}
-              headingRef={detailHeadingRef}
-            />
+            {selectedIntervention ? (
+              <Suspense fallback={<DetailFallback />}>
+                <LazyInterventionDetail
+                  intervention={selectedIntervention}
+                  onClose={() => dispatch({ type: "selectionCleared" })}
+                  onAdvance={handleAdvance}
+                  headingRef={detailHeadingRef}
+                />
+              </Suspense>
+            ) : (
+              <EmptyDetail
+                focusRequested={emptyDetailFocusRequested}
+                headingRef={detailHeadingRef}
+                onFocusRequestComplete={handleEmptyDetailFocusComplete}
+              />
+            )}
           </Box>
         </Stack>
       </Container>

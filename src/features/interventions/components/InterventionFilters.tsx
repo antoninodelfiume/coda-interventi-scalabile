@@ -1,26 +1,26 @@
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import SearchIcon from '@mui/icons-material/Search';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
-import FormControl from '@mui/material/FormControl';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import InputAdornment from '@mui/material/InputAdornment';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Paper from '@mui/material/Paper';
-import Select from '@mui/material/Select';
-import TextField from '@mui/material/TextField';
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import SearchIcon from "@mui/icons-material/Search";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
 import type {
   InterventionSort,
   PriorityFilter,
   StatusFilter,
-} from '../intervention.types';
+} from "../intervention.types";
 import {
   priorityLabels,
   sortLabels,
   statusLabels,
-} from '../intervention.types';
+} from "../intervention.types";
 
 type InterventionFiltersProps = {
   query: string;
@@ -52,17 +52,23 @@ export function InterventionFilters({
   onReset,
 }: InterventionFiltersProps) {
   return (
-    <Paper component="section" aria-label="Filtri interventi" variant="outlined" sx={{ p: 2.5 }}>
+    <Paper
+      id="intervention-filters"
+      component="section"
+      aria-label="Filtri interventi"
+      variant="outlined"
+      sx={{ p: 2.5 }}
+    >
       <Box
         sx={{
-          display: 'grid',
+          display: "grid",
           gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'minmax(240px, 2fr) 1fr 1fr',
-            lg: 'minmax(280px, 2fr) repeat(3, minmax(150px, 1fr))',
+            xs: "1fr",
+            sm: "minmax(240px, 2fr) 1fr 1fr",
+            lg: "minmax(280px, 2fr) repeat(3, minmax(150px, 1fr))",
           },
           gap: 2,
-          alignItems: 'center',
+          alignItems: "center",
         }}
       >
         <TextField
@@ -87,11 +93,15 @@ export function InterventionFilters({
             labelId="status-filter-label"
             label="Stato"
             value={statusFilter}
-            onChange={(event) => onStatusChange(event.target.value as StatusFilter)}
+            onChange={(event) =>
+              onStatusChange(event.target.value as StatusFilter)
+            }
           >
             <MenuItem value="all">Tutti gli stati</MenuItem>
             {Object.entries(statusLabels).map(([value, label]) => (
-              <MenuItem key={value} value={value}>{label}</MenuItem>
+              <MenuItem key={value} value={value}>
+                {label}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -108,7 +118,9 @@ export function InterventionFilters({
           >
             <MenuItem value="all">Tutte le priorità</MenuItem>
             {Object.entries(priorityLabels).map(([value, label]) => (
-              <MenuItem key={value} value={value}>{label}</MenuItem>
+              <MenuItem key={value} value={value}>
+                {label}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -119,10 +131,14 @@ export function InterventionFilters({
             labelId="sort-label"
             label="Ordina per"
             value={sortBy}
-            onChange={(event) => onSortChange(event.target.value as InterventionSort)}
+            onChange={(event) =>
+              onSortChange(event.target.value as InterventionSort)
+            }
           >
             {Object.entries(sortLabels).map(([value, label]) => (
-              <MenuItem key={value} value={value}>{label}</MenuItem>
+              <MenuItem key={value} value={value}>
+                {label}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -131,11 +147,11 @@ export function InterventionFilters({
       <Box
         sx={{
           mt: 2,
-          display: 'flex',
-          flexWrap: 'wrap',
+          display: "flex",
+          flexWrap: "wrap",
           gap: 1.5,
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
         <FormControlLabel
