@@ -1,0 +1,44 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { App } from './App';
+
+describe('Coda interventi scalabile: smoke test dello starter', () => {
+  it('mostra i 24 interventi iniziali', () => {
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Coda interventi scalabile' })).toBeInTheDocument();
+    expect(screen.getByText('24 interventi visibili')).toBeInTheDocument();
+    expect(screen.getByText('Ripristino gruppo di continuità')).toBeInTheDocument();
+  });
+
+  it('mantiene disponibile la ricerca per titolo', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'Cerca interventi' }),
+      'citofono',
+    );
+
+    expect(screen.getByText('1 intervento visibile')).toBeInTheDocument();
+    expect(screen.getByText('Ripristino citofono reception')).toBeInTheDocument();
+  });
+
+  it('seleziona, aggiorna e chiude il dettaglio', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const detailTrigger = screen.getByRole('button', { name: 'Mostra dettaglio INT-1048' });
+    await user.click(detailTrigger);
+    expect(
+      screen.getByRole('heading', { name: 'Ripristino gruppo di continuità' }),
+    ).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Chiudi dettaglio' }));
+    expect(
+      screen.getByText(
+        'Seleziona una riga per consultare i dati e aggiornare lo stato.',
+      ),
+    ).toBeInTheDocument();
+    expect(detailTrigger).toHaveFocus();
+  });
+});
