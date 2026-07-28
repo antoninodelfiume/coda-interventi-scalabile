@@ -38,6 +38,7 @@ export function InterventionDetail({
   useEffect(() => {
     if (interventionId) headingRef.current?.focus();
   }, [headingRef, interventionId]);
+
   if (!intervention) {
     return (
       <Paper

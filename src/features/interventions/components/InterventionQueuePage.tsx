@@ -1,23 +1,25 @@
 import BuildCircleOutlinedIcon from "@mui/icons-material/BuildCircleOutlined";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
+import Paper from "@mui/material/Paper";
+import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
   useReducer,
   useRef,
-  lazy,
-  Suspense,
   useState,
   type RefObject,
 } from "react";
-
 import {
-  interventionQueueReducer,
   createInitialQueueState,
+  interventionQueueReducer,
 } from "../interventionQueueReducer";
 import {
   selectInterventionById,
@@ -32,8 +34,6 @@ import type {
 } from "../intervention.types";
 import { InterventionFilters } from "./InterventionFilters";
 import { InterventionSummary } from "./InterventionSummary";
-import { Paper } from "@mui/material";
-import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 
 type TableModule = typeof import("./InterventionTable");
 type DetailModule = typeof import("./InterventionDetail");
@@ -55,20 +55,20 @@ async function waitForDemoDelay() {
 }
 
 function loadTableModule() {
+  // La stessa Promise serve al preload e a React.lazy.
   tableModulePromise ??= Promise.all([
     import("./InterventionTable"),
     waitForDemoDelay(),
   ]).then(([module]) => module);
-
   return tableModulePromise;
 }
 
 function preloadInterventionDetail() {
+  // Il path letterale permette a Vite di creare un chunk prevedibile.
   detailModulePromise ??= Promise.all([
     import("./InterventionDetail"),
     waitForDemoDelay(),
   ]).then(([module]) => module);
-
   return detailModulePromise;
 }
 
@@ -81,6 +81,7 @@ const LazyInterventionDetail = lazy(() =>
     default: module.InterventionDetail,
   })),
 );
+
 function TableFallback() {
   return (
     <Box component="section" aria-labelledby="queue-loading-heading">
@@ -95,6 +96,11 @@ function TableFallback() {
         sx={{ mt: 1.5, p: 2.5, minHeight: 560 }}
       >
         <Typography>Caricamento tabella...</Typography>
+        <Stack spacing={1.5} sx={{ mt: 2 }} aria-hidden="true">
+          {Array.from({ length: 6 }, (_, index) => (
+            <Skeleton key={index} variant="rounded" height={60} />
+          ))}
+        </Stack>
       </Paper>
     </Box>
   );
@@ -111,9 +117,15 @@ function DetailFallback() {
       sx={{ p: 3, minHeight: 260 }}
     >
       <Typography>Caricamento dettaglio...</Typography>
+      <Stack spacing={1.5} sx={{ mt: 2 }} aria-hidden="true">
+        <Skeleton variant="text" width="35%" />
+        <Skeleton variant="text" width="80%" height={36} />
+        <Skeleton variant="rounded" height={96} />
+      </Stack>
     </Paper>
   );
 }
+
 type EmptyDetailProps = {
   focusRequested: boolean;
   headingRef: RefObject<HTMLHeadingElement | null>;
@@ -160,10 +172,12 @@ function EmptyDetail({
 type InterventionQueuePageProps = {
   initialInterventions: Intervention[];
 };
+
 export function InterventionQueuePage({
   initialInterventions,
 }: InterventionQueuePageProps) {
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
+  const [focusRequestId, setFocusRequestId] = useState<string | null>(null);
   const [emptyDetailFocusRequested, setEmptyDetailFocusRequested] =
     useState(false);
   const [state, dispatch] = useReducer(
@@ -172,7 +186,6 @@ export function InterventionQueuePage({
     createInitialQueueState,
   );
 
-  // La lista è derived state: filtri e ordinamento non richiedono un setter.
   const visibleInterventions = useMemo(
     () =>
       selectVisibleInterventions({
@@ -211,19 +224,24 @@ export function InterventionQueuePage({
       )
     ) {
       const filters = document.getElementById("intervention-filters");
-
       if (!filters?.contains(document.activeElement)) {
         setEmptyDetailFocusRequested(true);
       }
-
       dispatch({ type: "selectionCleared" });
     }
   }, [state.selectedId, visibleInterventions]);
 
   const handleSelect = useCallback((interventionId: string) => {
+    setFocusRequestId(null);
     setEmptyDetailFocusRequested(false);
     dispatch({ type: "interventionSelected", interventionId });
   }, []);
+
+  const handleCloseDetail = useCallback(() => {
+    if (state.selectedId) setFocusRequestId(state.selectedId);
+    setEmptyDetailFocusRequested(false);
+    dispatch({ type: "selectionCleared" });
+  }, [state.selectedId]);
 
   const handleAdvance = useCallback((interventionId: string) => {
     dispatch({ type: "statusAdvanced", interventionId });
@@ -237,6 +255,10 @@ export function InterventionQueuePage({
     dispatch({ type: "filtersReset" });
   }, []);
 
+  const handleFocusRequestComplete = useCallback(() => {
+    setFocusRequestId(null);
+  }, []);
+
   const handleEmptyDetailFocusComplete = useCallback(() => {
     setEmptyDetailFocusRequested(false);
   }, []);
@@ -246,6 +268,14 @@ export function InterventionQueuePage({
     state.statusFilter !== "all" ||
     state.priorityFilter !== "all" ||
     state.monitoredOnly;
+
+  const viewKey = [
+    state.query.trim().toLocaleLowerCase("it-IT"),
+    state.statusFilter,
+    state.priorityFilter,
+    state.monitoredOnly ? "monitored" : "all",
+    state.sortBy,
+  ].join("|");
 
   return (
     <Box sx={{ minHeight: "100dvh", bgcolor: "background.default", pb: 5 }}>
@@ -316,20 +346,24 @@ export function InterventionQueuePage({
           >
             <Suspense fallback={<TableFallback />}>
               <LazyInterventionTable
-                onPrepareDetail={preloadInterventionDetail}
                 interventions={visibleInterventions}
                 selectedId={state.selectedId}
+                viewKey={viewKey}
+                focusRequestId={focusRequestId}
+                onFocusRequestComplete={handleFocusRequestComplete}
+                onPrepareDetail={preloadInterventionDetail}
                 onSelect={handleSelect}
                 onAdvance={handleAdvance}
                 onToggleMonitoring={handleToggleMonitoring}
                 onResetFilters={handleReset}
               />
             </Suspense>
+
             {selectedIntervention ? (
               <Suspense fallback={<DetailFallback />}>
                 <LazyInterventionDetail
                   intervention={selectedIntervention}
-                  onClose={() => dispatch({ type: "selectionCleared" })}
+                  onClose={handleCloseDetail}
                   onAdvance={handleAdvance}
                   headingRef={detailHeadingRef}
                 />

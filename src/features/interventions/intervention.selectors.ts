@@ -27,17 +27,16 @@ export function selectVisibleInterventions({
 }: VisibleInterventionsInput): Intervention[] {
   const normalizedQuery = query.trim().toLocaleLowerCase('it-IT');
 
-  const matchesFilters = (intervention: Intervention) => {
-    const searchableText = [
+  const filtered = interventions.filter((intervention) => {
+    const matchesQuery = [
       intervention.id,
       intervention.title,
       intervention.site,
       intervention.team,
     ]
       .join(' ')
-      .toLocaleLowerCase('it-IT');
-
-    const matchesQuery = searchableText.includes(normalizedQuery);
+      .toLocaleLowerCase('it-IT')
+      .includes(normalizedQuery);
     const matchesStatus =
       statusFilter === 'all' || intervention.status === statusFilter;
     const matchesPriority =
@@ -45,9 +44,7 @@ export function selectVisibleInterventions({
     const matchesMonitoring = !monitoredOnly || intervention.monitored;
 
     return matchesQuery && matchesStatus && matchesPriority && matchesMonitoring;
-  };
-
-  const filtered = interventions.filter(matchesFilters);
+  });
 
   return [...filtered].sort((first, second) => {
     if (sortBy === 'priority') {
@@ -56,11 +53,9 @@ export function selectVisibleInterventions({
         first.dueAt.localeCompare(second.dueAt)
       );
     }
-
     if (sortBy === 'dueDate') {
       return first.dueAt.localeCompare(second.dueAt);
     }
-
     return (
       first.site.localeCompare(second.site, 'it-IT') ||
       first.dueAt.localeCompare(second.dueAt)

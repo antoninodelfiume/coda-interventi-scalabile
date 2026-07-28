@@ -15,12 +15,12 @@ import { priorityLabels, statusLabels } from "../intervention.types";
 
 type InterventionRowProps = {
   intervention: Intervention;
-  selected: boolean;
   rowIndex: number;
+  selected: boolean;
+  onPrepareDetail: () => Promise<unknown>;
   onSelect: (interventionId: string) => void;
   onAdvance: (interventionId: string) => void;
   onToggleMonitoring: (interventionId: string) => void;
-  onPrepareDetail: () => Promise<unknown>;
 };
 
 function formatDate(value: string) {
@@ -35,15 +35,13 @@ function formatDate(value: string) {
 /** memo evita di richiamare la riga quando React riceve le stesse props. */
 export const InterventionRow = memo(function InterventionRow({
   intervention,
-  selected,
   rowIndex,
+  selected,
+  onPrepareDetail,
   onSelect,
   onAdvance,
   onToggleMonitoring,
-  onPrepareDetail,
 }: InterventionRowProps) {
-  // TODO 05 e 08: il controllo dettaglio dovrà avviare il preload e ricevere
-  // un id stabile usato dalla sequenza scroll, mount e focus.
   return (
     <TableRow
       selected={selected}
@@ -102,11 +100,12 @@ export const InterventionRow = memo(function InterventionRow({
           </Tooltip>
           <Tooltip title="Mostra dettaglio">
             <IconButton
-              onPointerEnter={() => void onPrepareDetail()}
-              onFocus={() => void onPrepareDetail()}
+              id={`detail-trigger-${intervention.id}`}
               aria-label={`Mostra dettaglio ${intervention.id}`}
               aria-pressed={selected}
               aria-controls="intervention-detail"
+              onPointerEnter={() => void onPrepareDetail()}
+              onFocus={() => void onPrepareDetail()}
               onClick={() => onSelect(intervention.id)}
             >
               <VisibilityOutlinedIcon />

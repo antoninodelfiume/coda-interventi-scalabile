@@ -102,13 +102,13 @@ export function interventionQueueReducer(
         (intervention) => intervention.id === action.interventionId,
       )
         ? {
-            ...state,
-            interventions: state.interventions.map((intervention) =>
-              intervention.id === action.interventionId
-                ? { ...intervention, monitored: !intervention.monitored }
-                : intervention,
-            ),
-          }
+          ...state,
+          interventions: state.interventions.map((intervention) =>
+            intervention.id === action.interventionId
+              ? { ...intervention, monitored: !intervention.monitored }
+              : intervention,
+          ),
+        }
         : state;
     default: {
       const exhaustive: never = action;

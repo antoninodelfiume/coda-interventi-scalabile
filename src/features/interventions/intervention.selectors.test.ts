@@ -11,6 +11,19 @@ const interventions: Intervention[] = [
 ];
 
 describe('intervention selectors', () => {
+  it('combina ricerca, filtri e monitoraggio', () => {
+    const result = selectVisibleInterventions({
+      interventions,
+      query: 'IMPIANTI',
+      statusFilter: 'inProgress',
+      priorityFilter: 'critical',
+      monitoredOnly: true,
+      sortBy: 'priority',
+    });
+
+    expect(result.map((item) => item.id)).toEqual(['INT-2']);
+  });
+
   it('cerca per id, sede e team ignorando maiuscole e spazi esterni', () => {
     const input = {
       interventions,
@@ -30,22 +43,9 @@ describe('intervention selectors', () => {
       selectVisibleInterventions({ ...input, query: '  impianti  ' })[0].id,
     ).toBe('INT-2');
   });
-  it('combina filtri e monitoraggio', () => {
-    const result = selectVisibleInterventions({
-      interventions,
-      query: '',
-      statusFilter: 'inProgress',
-      priorityFilter: 'critical',
-      monitoredOnly: true,
-      sortBy: 'priority',
-    });
 
-    expect(result.map((item) => item.id)).toEqual(['INT-2']);
-  });
-
-  it('ordina per priorità', () => {
+  it('ordina per priorità senza mutare la lista sorgente', () => {
     const sourceOrder = interventions.map((item) => item.id);
-
     const result = selectVisibleInterventions({
       interventions,
       query: '',
@@ -54,9 +54,9 @@ describe('intervention selectors', () => {
       monitoredOnly: false,
       sortBy: 'priority',
     });
+
     expect(result.map((item) => item.id)).toEqual(['INT-2', 'INT-3', 'INT-1']);
     expect(interventions.map((item) => item.id)).toEqual(sourceOrder);
-
   });
 
   it('ordina per sede senza mutare la lista sorgente', () => {

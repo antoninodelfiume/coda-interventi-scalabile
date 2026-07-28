@@ -9,9 +9,9 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Intervention } from "../intervention.types";
 import { InterventionRow } from "./InterventionRow";
-import { useMemo, useRef, useState } from "react";
 
 const VIEWPORT_HEIGHT = 560;
 const ROW_HEIGHT = 76;
@@ -20,16 +20,22 @@ const OVERSCAN = 4;
 type InterventionTableProps = {
   interventions: Intervention[];
   selectedId: string | null;
+  viewKey: string;
+  focusRequestId: string | null;
+  onFocusRequestComplete: () => void;
+  onPrepareDetail: () => Promise<unknown>;
   onSelect: (interventionId: string) => void;
   onAdvance: (interventionId: string) => void;
   onToggleMonitoring: (interventionId: string) => void;
   onResetFilters: () => void;
-  onPrepareDetail: () => Promise<unknown>;
 };
 
 export function InterventionTable({
   interventions,
   selectedId,
+  viewKey,
+  focusRequestId,
+  onFocusRequestComplete,
   onPrepareDetail,
   onSelect,
   onAdvance,
@@ -39,7 +45,12 @@ export function InterventionTable({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
 
-  const firstVisibleIndex = Math.floor(scrollTop / ROW_HEIGHT);
+  const maxScrollTop = Math.max(
+    0,
+    interventions.length * ROW_HEIGHT - VIEWPORT_HEIGHT,
+  );
+  const safeScrollTop = Math.min(scrollTop, maxScrollTop);
+  const firstVisibleIndex = Math.floor(safeScrollTop / ROW_HEIGHT);
   const visibleRowCount = Math.ceil(VIEWPORT_HEIGHT / ROW_HEIGHT);
   const startIndex = Math.max(0, firstVisibleIndex - OVERSCAN);
   const endIndex = Math.min(
@@ -54,8 +65,52 @@ export function InterventionTable({
 
   const topSpacerHeight = startIndex * ROW_HEIGHT;
   const bottomSpacerHeight = (interventions.length - endIndex) * ROW_HEIGHT;
-  // TODO 08: dopo il windowing gestire reset e clamp dello scroll, id delle
-  // azioni e ripristino del focus su righe non più montate.
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) container.scrollTop = 0;
+    setScrollTop(0);
+  }, [viewKey]);
+
+  useEffect(() => {
+    if (scrollTop <= maxScrollTop) return;
+    const container = scrollContainerRef.current;
+    if (container) container.scrollTop = maxScrollTop;
+    setScrollTop(maxScrollTop);
+  }, [maxScrollTop, scrollTop]);
+
+  useEffect(() => {
+    if (!focusRequestId) return;
+
+    const rowIndex = interventions.findIndex(
+      (intervention) => intervention.id === focusRequestId,
+    );
+    if (rowIndex < 0) {
+      onFocusRequestComplete();
+      return;
+    }
+
+    const nextScrollTop = Math.min(rowIndex * ROW_HEIGHT, maxScrollTop);
+    const container = scrollContainerRef.current;
+
+    // Prima scorriamo, poi React rimonta la riga e infine spostiamo il focus.
+    if (container) container.scrollTop = nextScrollTop;
+    setScrollTop(nextScrollTop);
+
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        document.getElementById(`detail-trigger-${focusRequestId}`)?.focus();
+        onFocusRequestComplete();
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [focusRequestId, interventions, maxScrollTop, onFocusRequestComplete]);
+
   if (interventions.length === 0) {
     return (
       <Paper
@@ -101,9 +156,9 @@ export function InterventionTable({
       >
         <Table
           stickyHeader
-          aria-rowcount={interventions.length + 1}
           sx={{ minWidth: 920 }}
           aria-label="Coda interventi tecnici"
+          aria-rowcount={interventions.length + 1}
         >
           <TableHead>
             <TableRow>
