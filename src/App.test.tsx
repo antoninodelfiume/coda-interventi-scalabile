@@ -1,10 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App';
-
+async function renderApp() {
+  await renderApp();
+  await screen.findByRole('table', { name: 'Coda interventi tecnici' });
+}
 describe('Coda interventi scalabile: smoke test dello starter', () => {
-  it('mostra i 24 interventi iniziali', () => {
-    render(<App />);
+  it('mostra i 24 interventi iniziali', async () => {
+    await renderApp();
 
     expect(screen.getByRole('heading', { name: 'Coda interventi scalabile' })).toBeInTheDocument();
     expect(screen.getByText('24 interventi visibili')).toBeInTheDocument();
@@ -13,7 +16,7 @@ describe('Coda interventi scalabile: smoke test dello starter', () => {
 
   it('mantiene disponibile la ricerca per titolo', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    await renderApp();
 
     await user.type(
       screen.getByRole('textbox', { name: 'Cerca interventi' }),
