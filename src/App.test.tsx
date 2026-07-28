@@ -1,16 +1,30 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "./App";
+import {
+  initialInterventions,
+  createInterventionDataset,
+} from "./features/interventions/interventions.fixture";
 afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 async function renderApp() {
-  await renderApp();
+  await render(<App interventions={initialInterventions} />);
   await screen.findByRole("table", { name: "Coda interventi tecnici" });
 }
 describe("Coda interventi scalabile: smoke test dello starter", () => {
+  it("genera dataset deterministici con id univoci", () => {
+    const firstDataset = createInterventionDataset(48);
+    const secondDataset = createInterventionDataset(48);
+
+    expect(firstDataset).toEqual(secondDataset);
+    expect(new Set(firstDataset.map((item) => item.id))).toHaveProperty(
+      "size",
+      48,
+    );
+  });
   it("mostra i 24 interventi iniziali", async () => {
-    await renderApp();
+    await render(<App interventions={initialInterventions} />);
 
     expect(
       screen.getByRole("heading", { name: "Coda interventi scalabile" }),
@@ -39,8 +53,7 @@ describe("Coda interventi scalabile: smoke test dello starter", () => {
   it("mostra un fallback locale mentre carica il primo dettaglio", async () => {
     const user = userEvent.setup();
     window.history.replaceState(null, "", "/?scenario=slow-sections");
-    await renderApp();
-
+    await render(<App interventions={initialInterventions} />);
     await user.click(
       screen.getByRole("button", { name: "Mostra dettaglio INT-1048" }),
     );
@@ -56,7 +69,7 @@ describe("Coda interventi scalabile: smoke test dello starter", () => {
   });
   it("mantiene disponibile la ricerca per titolo", async () => {
     const user = userEvent.setup();
-    await renderApp();
+    await render(<App interventions={initialInterventions} />);
 
     await user.type(
       screen.getByRole("textbox", { name: "Cerca interventi" }),
@@ -70,7 +83,7 @@ describe("Coda interventi scalabile: smoke test dello starter", () => {
   });
   it("chiude il dettaglio se la ricerca nasconde il record selezionato", async () => {
     const user = userEvent.setup();
-    await renderApp();
+    await render(<App interventions={initialInterventions} />);
 
     await user.click(
       screen.getByRole("button", { name: "Mostra dettaglio INT-1048" }),
@@ -94,7 +107,7 @@ describe("Coda interventi scalabile: smoke test dello starter", () => {
 
   it("seleziona, aggiorna e chiude il dettaglio", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App interventions={initialInterventions} />);
 
     const detailTrigger = screen.getByRole("button", {
       name: "Mostra dettaglio INT-1048",

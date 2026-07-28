@@ -28,5 +28,26 @@ export const initialInterventions: Intervention[] = [
   { id: 'INT-1071', title: 'Riparazione perdita lavabo accessibile', site: 'Bari Murat', team: 'Impianti idraulici', priority: 'high', status: 'open', dueAt: '2026-08-06', monitored: false },
 ];
 
-// TODO 06: esporre createInterventionDataset(size). Il generatore deve essere
-// deterministico, produrre id univoci e conservare initialInterventions.
+function addDays(value: string, days: number) {
+  const date = new Date(`${value}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+export function createInterventionDataset(size: number): Intervention[] {
+  const safeSize = Math.max(0, Math.floor(size));
+
+  return Array.from({ length: safeSize }, (_, index) => {
+    const template = initialInterventions[index % initialInterventions.length];
+    const batch = Math.floor(index / initialInterventions.length);
+
+    return {
+      ...template,
+      id: `INT-${1048 + index}`,
+      title:
+        batch === 0 ? template.title : `${template.title}, lotto ${batch + 1}`,
+      dueAt: addDays(template.dueAt, batch * 2),
+      monitored: (index + batch) % 5 === 0,
+    };
+  });
+}

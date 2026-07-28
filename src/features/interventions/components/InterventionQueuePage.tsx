@@ -25,6 +25,7 @@ import {
   summarizeInterventions,
 } from "../intervention.selectors";
 import type {
+  Intervention,
   InterventionSort,
   PriorityFilter,
   StatusFilter,
@@ -34,8 +35,8 @@ import { InterventionSummary } from "./InterventionSummary";
 import { Paper } from "@mui/material";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 
-type TableModule = typeof import('./InterventionTable');
-type DetailModule = typeof import('./InterventionDetail');
+type TableModule = typeof import("./InterventionTable");
+type DetailModule = typeof import("./InterventionDetail");
 
 let tableModulePromise: Promise<TableModule> | undefined;
 let detailModulePromise: Promise<DetailModule> | undefined;
@@ -43,8 +44,8 @@ let detailModulePromise: Promise<DetailModule> | undefined;
 function usesSlowSectionScenario() {
   return (
     import.meta.env.DEV &&
-    new URLSearchParams(window.location.search).get('scenario') ===
-      'slow-sections'
+    new URLSearchParams(window.location.search).get("scenario") ===
+      "slow-sections"
   );
 }
 
@@ -55,7 +56,7 @@ async function waitForDemoDelay() {
 
 function loadTableModule() {
   tableModulePromise ??= Promise.all([
-    import('./InterventionTable'),
+    import("./InterventionTable"),
     waitForDemoDelay(),
   ]).then(([module]) => module);
 
@@ -64,7 +65,7 @@ function loadTableModule() {
 
 function preloadInterventionDetail() {
   detailModulePromise ??= Promise.all([
-    import('./InterventionDetail'),
+    import("./InterventionDetail"),
     waitForDemoDelay(),
   ]).then(([module]) => module);
 
@@ -155,15 +156,19 @@ function EmptyDetail({
     </Paper>
   );
 }
-// TODO 05: condividere la Promise degli import, precaricare su focus o
-// puntatore e supportare ?scenario=slow-sections in sviluppo.
-export function InterventionQueuePage() {
+
+type InterventionQueuePageProps = {
+  initialInterventions: Intervention[];
+};
+export function InterventionQueuePage({
+  initialInterventions,
+}: InterventionQueuePageProps) {
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
   const [emptyDetailFocusRequested, setEmptyDetailFocusRequested] =
     useState(false);
   const [state, dispatch] = useReducer(
     interventionQueueReducer,
-    undefined,
+    initialInterventions,
     createInitialQueueState,
   );
 

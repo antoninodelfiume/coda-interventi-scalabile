@@ -3,13 +3,19 @@ import { ThemeProvider } from '@mui/material/styles';
 import { InterventionQueuePage } from './features/interventions/components/InterventionQueuePage';
 import { appTheme } from './theme';
 
-// TODO 06: permettere ad App di ricevere un dataset opzionale senza cambiare
-// il comportamento predefinito dei test che usano i 24 record originali.
-export function App() {
+import type { Intervention } from './features/interventions/intervention.types';
+import { createInterventionDataset } from './features/interventions/interventions.fixture';
+
+const defaultInterventions = createInterventionDataset(1_200);
+
+type AppProps = {
+  interventions?: Intervention[];
+};
+export function App({ interventions = defaultInterventions }: AppProps) {
   return (
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
-      <InterventionQueuePage />
+      <InterventionQueuePage initialInterventions={interventions} />
     </ThemeProvider>
   );
 }
