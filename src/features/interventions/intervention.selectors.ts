@@ -47,23 +47,25 @@ export function selectVisibleInterventions({
     return matchesQuery && matchesStatus && matchesPriority && matchesMonitoring;
   };
 
-  // TODO 02: sort modifica l'array ricevuto e il ramo "site" confronta il
-  // team. Correggere il campo e produrre sempre un nuovo array ordinato.
-  return interventions.sort((first, second) => {
+  const filtered = interventions.filter(matchesFilters);
+
+  return [...filtered].sort((first, second) => {
     if (sortBy === 'priority') {
       return (
         priorityRank[first.priority] - priorityRank[second.priority] ||
         first.dueAt.localeCompare(second.dueAt)
       );
     }
+
     if (sortBy === 'dueDate') {
       return first.dueAt.localeCompare(second.dueAt);
     }
+
     return (
-      first.team.localeCompare(second.team, 'it-IT') ||
+      first.site.localeCompare(second.site, 'it-IT') ||
       first.dueAt.localeCompare(second.dueAt)
     );
-  }).filter(matchesFilters);
+  });
 }
 
 export function summarizeInterventions(

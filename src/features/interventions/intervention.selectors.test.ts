@@ -44,6 +44,8 @@ describe('intervention selectors', () => {
   });
 
   it('ordina per priorità', () => {
+    const sourceOrder = interventions.map((item) => item.id);
+
     const result = selectVisibleInterventions({
       interventions,
       query: '',
@@ -52,8 +54,28 @@ describe('intervention selectors', () => {
       monitoredOnly: false,
       sortBy: 'priority',
     });
-
     expect(result.map((item) => item.id)).toEqual(['INT-2', 'INT-3', 'INT-1']);
+    expect(interventions.map((item) => item.id)).toEqual(sourceOrder);
+
+  });
+
+  it('ordina per sede senza mutare la lista sorgente', () => {
+    const sourceOrder = interventions.map((item) => item.id);
+    const result = selectVisibleInterventions({
+      interventions,
+      query: '',
+      statusFilter: 'all',
+      priorityFilter: 'all',
+      monitoredOnly: false,
+      sortBy: 'site',
+    });
+
+    expect(result.map((item) => item.site)).toEqual([
+      'Bari',
+      'Milano',
+      'Torino',
+    ]);
+    expect(interventions.map((item) => item.id)).toEqual(sourceOrder);
   });
 
   it('calcola il riepilogo dagli interventi', () => {
